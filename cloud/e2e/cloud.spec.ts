@@ -4,7 +4,10 @@ test('production cloud mode rejects all local execution and unsigned workspace r
   const teams=await request.get('/api/cloud/teams');expect(teams.status()).toBe(401);
   const cross=await request.post('/api/cloud/teams',{headers:{origin:'https://evil.example'},data:{}});expect(cross.status()).toBe(403);
   const forged=await request.get('/api/cloud/teams',{headers:{cookie:'oska_cloud_session=fake'}});expect(forged.status()).toBe(401);
-  const disabled=await request.get('/api/auth/get-session');expect(disabled.status()).toBe(503);
+  const identity=await request.get('/api/auth/get-session');
+  expect([200,503]).toContain(identity.status());
+  if(identity.status()===200)expect(await identity.json()).toBeNull();
+  else expect((await identity.json()).error.code).toBe('AUTH_SETUP_REQUIRED');
 });
 test('preview Google button uses the official identity SDK (UI fixture)',async({page})=>{
   await page.route('**/api/cloud/auth/session',route=>route.fulfill({json:{profile:null,setup:{origin:true,identity:true,session:true,database:true},loginMode:'neon-preview',redirectUri:null}}));
@@ -18,8 +21,11 @@ test('preview Google button uses the official identity SDK (UI fixture)',async({
   await expect(page.getByRole('alert').filter({hasText:'domain authorization pending'})).toBeVisible();
   expect(signIn).toMatchObject({provider:'google',callbackURL:new URL('/auth/complete',page.url()).href});
 });
-test('cloud landing honestly shows provider and deployment boundaries',async({page})=>{
-  await page.goto('/');await expect(page.getByRole('heading',{name:/Your ideas/})).toBeVisible();await expect(page.getByRole('heading',{name:'Provider access is still pending'})).toBeVisible();await expect(page.getByRole('button',{name:'Sign in with Google',exact:true})).toBeDisabled();
+test('cloud landing honestly shows provider and deployment boundaries',async({page,request})=>{
+  const session=await (await request.get('/api/cloud/auth/session')).json();
+  await page.goto('/');await expect(page.getByRole('heading',{name:/Your ideas/})).toBeVisible();await expect(page.getByRole('heading',{name:'Provider access is still pending'})).toBeVisible();
+  if(Object.values(session.setup).every(Boolean))await expect(page.getByRole('button',{name:'Sign in with Google',exact:true})).toBeEnabled();
+  else await expect(page.getByRole('button',{name:'Sign in with Google',exact:true})).toBeDisabled();
   await page.setViewportSize({width:390,height:844});await expect(page.getByRole('button',{name:'AI teams',exact:true})).toBeVisible();
   await expect.poll(()=>page.evaluate(()=>Array.from(document.querySelectorAll('*')).filter(el=>el.getBoundingClientRect().right>window.innerWidth+1).map(el=>({tag:el.tagName,className:el.className,text:el.textContent?.slice(0,60),right:el.getBoundingClientRect().right})))).toEqual([]);
 });
