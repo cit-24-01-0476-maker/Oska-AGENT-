@@ -1,0 +1,28 @@
+name: Agent host Linux verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['agent-host/**', '.github/workflows/agent-host.yml']
+permissions:
+  contents: read
+jobs:
+  linux-worker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.16.0'
+      - name: Transport, callback and tenant boundary fixtures
+        run: node --test agent-host/test/security.test.mjs agent-host/test/worker.test.mjs agent-host/test/rpc.test.mjs
+      - name: Build pinned official provider image
+        run: docker build --platform linux/amd64 -t oska-worker:1 agent-host
+      - name: Initialize official runtimes without login or inference
+        run: >-
+          docker run --rm --init --read-only --cap-drop ALL
+          --security-opt no-new-privileges --memory 3g --pids-limit 256
+          --tmpfs /tmp:rw,nosuid,nodev,size=1536m
+          --tmpfs /data:rw,nosuid,nodev,uid=10001,gid=10001,size=64m
+          oska-worker:1 node /app/smoke-native.mjs

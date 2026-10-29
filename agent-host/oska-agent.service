@@ -1,0 +1,20 @@
+[Unit]
+Description=OSKA isolated agent gateway
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/oska-agent/agent-host
+EnvironmentFile=/etc/oska-agent.env
+ExecStart=/usr/bin/node /opt/oska-agent/agent-host/gateway.mjs
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+ProtectHome=true
+ProtectSystem=strict
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

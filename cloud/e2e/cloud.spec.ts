@@ -37,3 +37,15 @@ test('signed-in cloud team form saves only an explicit draft (UI fixture)',async
   const dialog=page.getByRole('dialog');await dialog.getByLabel('Team name').fill('Research team');await dialog.getByLabel('Shared objective').fill('Research and review a topic');await dialog.getByRole('button',{name:'Save team draft',exact:true}).click();
   expect(saved).toMatchObject({name:'Research team',members:[{name:'Planner',provider:'antigravity',modelId:null}]});await expect(page.getByRole('status')).toContainText('Team draft saved');
 });
+test('private agent connection discovers returned models and submits a text task (UI fixtures)',async({page})=>{
+  await page.route('**/api/cloud/auth/session',route=>route.fulfill({json:{profile:{sub:'ui-test',email:'ui@example.com',name:'UI Test'},setup:{origin:true,identity:true,session:true,database:true},loginMode:'neon-preview',redirectUri:null}}));
+  await page.route('**/api/cloud/teams',route=>route.fulfill({json:{teams:[]}}));await page.route('**/api/cloud/tasks',route=>route.fulfill({json:{tasks:[]}}));
+  await page.route('**/api/cloud/agent/status',route=>route.fulfill({json:{configured:true,textOnly:true}}));
+  let posted:Record<string,unknown>={};
+  await page.route('**/api/cloud/agent/jobs',async route=>{posted=route.request().postDataJSON();await route.fulfill({json:{id:'fixture-job'}});});
+  await page.route('**/api/cloud/agent/jobs/fixture-job',route=>route.fulfill({json:posted.action==='models'?{id:'fixture-job',status:'succeeded',result:{models:[{id:'fixture-account-model',name:'Fixture Account Model'}]}}:{id:'fixture-job',status:'succeeded',result:{response:'Fixture task output'}}}));
+  await page.goto('/');await page.getByRole('button',{name:'Connections',exact:true}).click();await page.getByRole('button',{name:'Refresh models',exact:true}).click();
+  await expect(page.getByLabel('Available account model')).toBeVisible();await expect(page.getByLabel('Available account model')).toHaveValue('fixture-account-model');
+  await page.getByLabel('Agent server task').fill('Summarize this goal');await page.getByRole('button',{name:'Run selected model',exact:true}).click();
+  await expect(page.getByText('Fixture task output',{exact:true})).toBeVisible();expect(posted).toEqual({action:'run',provider:'antigravity',model:'fixture-account-model',prompt:'Summarize this goal'});
+});

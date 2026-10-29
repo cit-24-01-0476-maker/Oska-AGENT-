@@ -1,0 +1,3 @@
+import {createInterface} from 'node:readline';
+const input=createInterface({input:process.stdin});
+input.on('line',line=>{const message=JSON.parse(line);if(message.method==='echo')process.stdout.write(JSON.stringify({jsonrpc:'2.0',id:message.id,result:message.params})+'\n');if(message.method==='permission'){process.stdout.write(JSON.stringify({jsonrpc:'2.0',id:999,method:'session/request_permission',params:{options:[]}})+'\n');process.stdout.write(JSON.stringify({jsonrpc:'2.0',id:message.id,result:{sent:true}})+'\n');}if(message.id===999)process.stdout.write(JSON.stringify({jsonrpc:'2.0',method:'fixture/permission',params:message.result})+'\n');});

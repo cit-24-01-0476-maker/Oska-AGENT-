@@ -4,7 +4,7 @@
 
 A working local-first MVP for Windows. Next.js / React / strict TypeScript, Tailwind, a shadcn-style Radix Button, Lucide and Framer Motion. Prisma 6 + SQLite persist tasks, plans, approvals, conversations, events, artifacts and usage. Real events stream over SSE. No paid API connector is enabled.
 
-**Vercel/browser-only mode:** deployment configuration, tenant-scoped Postgres storage and team drafts are now included. See [cloud/DEPLOYMENT.md](cloud/DEPLOYMENT.md). Cloud subscription inference is **not implemented**: Antigravity local account quota cannot be inferred from a website login, and remotely hosted ChatGPT/Codex plan usage needs its official supported eligibility path. The cloud UI shows those blockers honestly and never uses the owner's local model account for visitors.
+**Vercel/browser-only mode:** the website, Google preview identity, tenant-scoped Postgres storage and team drafts are deployed. A separate [persistent agent server package](agent-host/README.md) now implements per-user containers, official Antigravity ACP / Codex app-server connections, live catalogs, text tasks and sequential team roles. Its hosting is **not connected yet**; do not advertise live hosted inference. Users need no local install on that path. Native provider login/eligibility and quota still apply; Google website identity does not grant model access. Vercel never uses the owner's local model account for visitors. See [cloud/DEPLOYMENT.md](cloud/DEPLOYMENT.md).
 
 ## Install and start (PowerShell)
 

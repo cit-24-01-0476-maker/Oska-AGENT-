@@ -5,6 +5,7 @@ import {isCloud} from '@/lib/runtime';
 import {cloudAuth,guardCloud,cloudUser} from '@/cloud/auth';
 import {teamSchema,cloudTaskSchema,providerAvailability} from '@/cloud/contracts';
 import {listTeams,saveTeam,deleteTeam,recordTask,listTasks,enforceWriteRate} from '@/cloud/repository';
+import {agentRequest} from '@/cloud/agent';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 async function body(request:Request){const length=Number(request.headers.get('content-length')||0);if(length>100000)throw new AppError('SIZE','Request too large.',413);if(!request.headers.get('content-type')?.includes('application/json'))throw new AppError('TYPE','Expected JSON.',415);const source=await request.text();if(source.length>100000)throw new AppError('SIZE','Request too large.',413);try{return JSON.parse(source);}catch{throw new AppError('JSON','Malformed JSON body.');}}
@@ -15,6 +16,7 @@ async function handler(request:Request,{params}:{params:Promise<{path:string[]}>
     if(resource==='auth')return await cloudAuth(request,action);
     guardCloud(request);const user=await cloudUser(request);
     if(!['GET','HEAD'].includes(request.method))await enforceWriteRate(user);
+    if(resource==='agent')return NextResponse.json(await agentRequest(user,path.slice(1),request.method,request.method==='POST'?await body(request):undefined),{headers:{'Cache-Control':'no-store'}});
     if(resource==='providers'&&request.method==='GET')return NextResponse.json({providers:providerAvailability});
     if(resource==='teams'){
       if(!action&&request.method==='GET')return NextResponse.json({teams:await listTeams(user)});

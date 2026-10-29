@@ -16,6 +16,8 @@ This is a separate hosted workspace mode. The working local CLI edition is prese
 
 ## What this version can and cannot do
 
+The separate [agent-host package](../agent-host/README.md) adds a persistent server path with one isolated native-provider worker per verified user. The browser communicates through the authenticated `/api/cloud/agent/*` bridge; users need no companion. Hosting is not provisioned/connected yet. `OSKA_AGENT_ORIGIN` and `OSKA_AGENT_SECRET` must be configured only after validating that host. Its Connections UI offers native login, catalog discovery, text tasks and sequential saved-team roles; browser/computer tools are not implemented there. Legacy saved-goal records continue to be blocked drafts; server execution jobs are persisted separately in the worker volume. The original Vercel-only restrictions below remain applicable without this host. Native client installation is not proof of permission for a public subscription service.
+
 After deployment configuration, users can sign in with Google, save personal goals, create/delete team drafts, and assign requested provider/model identifiers to roles. Every query is scoped to the Google-verified subject. Model identifiers in drafts are explicitly unverified; no fictional catalog is shown.
 
 **This does not implement hosted inference from Antigravity, ChatGPT or Codex subscriptions.** Goals are recorded as BLOCKED_PROVIDER and no model request is sent. Team drafts do not run agents. Do not advertise this branch as a complete Manus-like cloud agent.
