@@ -21,7 +21,8 @@ export class Providers{
     const pending=this.open(provider).finally(()=>this.initializing.delete(provider));this.initializing.set(provider,pending);return pending;
   }
   async open(provider){
-    const home=join(this.home,provider);await mkdir(home,{recursive:true,mode:0o700});await mkdir(join(home,'workspace'),{recursive:true,mode:0o700});
+    const home=join(this.home,provider);await mkdir(home,{recursive:true,mode:0o700});
+    await Promise.all(['workspace','.codex','.antigravity'].map(directory=>mkdir(join(home,directory),{recursive:true,mode:0o700})));
     const rpc=new Rpc(provider==='codex'?'/usr/local/bin/codex':'/opt/antigravity/agy_acp_server.par',provider==='codex'?['app-server']:['--uid='],{cwd:join(home,'workspace'),env:providerEnvironment(home)});
     this.clients.set(provider,rpc);
     try{

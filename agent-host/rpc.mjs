@@ -12,7 +12,7 @@ export class Rpc extends EventEmitter{
     this.child.stderr.on('data',chunk=>{diagnostic+=chunk;if(diagnostic.length>65536){this.close();return;}const lines=diagnostic.split('\n');diagnostic=lines.pop();for(const line of lines)this.emit('diagnostic',line.trim());});
     this.child.on('error',()=>this.fail('Provider could not start.'));
     this.child.stdin.on('error',()=>this.fail('Provider input closed.'));
-    this.child.on('exit',()=>this.fail('Provider stopped.'));
+    this.child.on('exit',code=>this.fail('Provider stopped (exit '+code+').'));
   }
   send(value){if(this.closed)throw new Error('Provider stopped.');this.child.stdin.write(JSON.stringify(value)+'\n');}
   consume(chunk){
