@@ -1,0 +1,13 @@
+node_modules/
+.next/
+.env
+.env.local
+data/
+prisma/*.db*
+test-results/
+playwright-report/
+*.tsbuildinfo
+.npm-cache/
+.pnpm-store/
+server.log
+server-error.log

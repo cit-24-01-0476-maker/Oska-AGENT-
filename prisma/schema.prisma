@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "sqlite"
+  url = env("DATABASE_URL")
+}
+model User {
+  id String @id @default(cuid())
+  name String @default("Local workspace")
+  createdAt DateTime @default(now())
+}
+model ProviderConnection {
+  id String @id
+  status String
+  lastError String?
+  checkedAt DateTime @updatedAt
+  models ModelCatalogEntry[]
+}
+model ModelCatalogEntry {
+  id String @id @default(cuid())
+  providerId String
+  modelId String
+  displayName String
+  available Boolean @default(true)
+  provider ProviderConnection @relation(fields:[providerId],references:[id],onDelete:Cascade)
+  @@unique([providerId,modelId])
+}
+model Task {
+  id String @id @default(cuid())
+  requestId String @unique
+  title String
+  prompt String
+  mode String
+  modelId String?
+  status String @default("CREATED")
+  error String?
+  result String @default("")
+  conversationId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  steps TaskStep[]
+  events TaskEvent[]
+  messages ConversationMessage[]
+  tools ToolExecution[]
+  approvals ApprovalRequest[]
+  artifacts Artifact[]
+  usage UsageRecord[]
+  @@index([createdAt])
+}
+model TaskStep {
+  id String @id @default(cuid())
+  taskId String
+  number Int
+  title String
+  tool String
+  expectedOutput String
+  risk String
+  approvalRequired Boolean @default(false)
+  status String @default("PENDING")
+  task Task @relation(fields:[taskId],references:[id],onDelete:Cascade)
+  @@unique([taskId,number])
+}
+model TaskEvent {
+  id Int @id @default(autoincrement())
+  taskId String
+  type String
+  data String
+  createdAt DateTime @default(now())
+  task Task @relation(fields:[taskId],references:[id],onDelete:Cascade)
+  @@index([taskId,id])
+}
+model ConversationMessage {
+  id String @id @default(cuid())
+  taskId String
+  role String
+  content String
+  createdAt DateTime @default(now())
+  task Task @relation(fields:[taskId],references:[id],onDelete:Cascade)
+}
+model ToolExecution {
+  id String @id @default(cuid())
+  taskId String
+  tool String
+  arguments String
+  status String
+  createdAt DateTime @default(now())
+  task Task @relation(fields:[taskId],references:[id],onDelete:Cascade)
+}
+model ApprovalRequest {
+  id String @id @default(cuid())
+  taskId String
+  context String
+  scope String
+  status String @default("PENDING")
+  decidedAt DateTime?
+  task Task @relation(fields:[taskId],references:[id],onDelete:Cascade)
+}
+model Artifact {
+  id String @id @default(cuid())
+  taskId String
+  name String
+  path String
+  mime String
+  size Int
+  createdAt DateTime @default(now())
+  task Task @relation(fields:[taskId],references:[id],onDelete:Cascade)
+}
+model UsageRecord {
+  id String @id @default(cuid())
+  taskId String
+  provider String
+  modelId String
+  tokens Int?
+  status String
+  createdAt DateTime @default(now())
+  task Task @relation(fields:[taskId],references:[id],onDelete:Cascade)
+}
+model Setting {
+  key String @id
+  value String
+}
