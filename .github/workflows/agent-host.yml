@@ -6,6 +6,9 @@ on:
     paths: ['agent-host/**', '.github/workflows/agent-host.yml']
 permissions:
   contents: read
+concurrency:
+  group: agent-host-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   linux-worker:
     runs-on: ubuntu-24.04

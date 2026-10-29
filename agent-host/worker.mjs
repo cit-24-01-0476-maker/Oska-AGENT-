@@ -50,9 +50,13 @@ export function worker({token,home='/data',providers=new Providers(home)}){
               outputs.push({name:member.name,provider:member.provider,model:member.modelId,response:result.response.slice(0,200000)});job.result={outputs:[...outputs],activeRole:member.name};await persist(job);
             }job.result={outputs};
           }
-          job.status='succeeded';
-        }catch(error){job.status='failed';job.error=error.message;}
-        finally{busy=false;await persist(job).catch(()=>{job.status='failed';job.error='Could not persist the completed response.';});}
+        }catch(error){job.error=error.message;}
+        finally{
+          const outcome=job.error?'failed':'succeeded';
+          try{await persist({...job,status:outcome});job.status=outcome;}
+          catch{job.status='failed';job.error='Could not persist the completed response.';}
+          busy=false;
+        }
       })();
     }catch(error){json(response,400,{error:error.message});}
   });

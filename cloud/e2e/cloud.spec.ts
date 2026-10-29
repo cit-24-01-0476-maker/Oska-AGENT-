@@ -2,6 +2,7 @@ import {test,expect} from '@playwright/test';
 test('production cloud mode rejects all local execution and unsigned workspace requests',async({request})=>{
   const local=await request.get('/api/providers/antigravity/status');expect(local.status()).toBe(403);expect((await local.json()).error.code).toBe('LOCAL_EXECUTION_DISABLED');
   const teams=await request.get('/api/cloud/teams');expect(teams.status()).toBe(401);
+  const agent=await request.get('/api/cloud/agent/status');expect(agent.status()).toBe(401);
   const cross=await request.post('/api/cloud/teams',{headers:{origin:'https://evil.example'},data:{}});expect(cross.status()).toBe(403);
   const forged=await request.get('/api/cloud/teams',{headers:{cookie:'oska_cloud_session=fake'}});expect(forged.status()).toBe(401);
   const identity=await request.get('/api/auth/get-session');
