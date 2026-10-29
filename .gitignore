@@ -18,3 +18,7 @@ server-error.log
 .env*
 .agents/
 skills-lock.json
+
+# Private generated agent-server configuration
+**/oska-agent.env
+agent-host/private/
