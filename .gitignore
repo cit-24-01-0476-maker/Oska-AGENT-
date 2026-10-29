@@ -13,3 +13,8 @@ playwright-report/
 .pnpm-store/
 server.log
 server-error.log
+
+.vercel
+.env*
+.agents/
+skills-lock.json

@@ -1,5 +1,13 @@
 # OSKA on Vercel — browser-only release boundary
 
+## Current deployed environment
+
+The cloud foundation is deployed at **https://oska-agent.vercel.app** in the owner's Vercel account. A new Neon `free_v3` database resource named `oska-agent-db` was provisioned in Singapore and connected only to this project. The committed cloud SQL schema was applied successfully. A live database smoke test verified persistence, cross-user list isolation, cross-user deletion rejection and blocked-provider goal persistence; its synthetic records were removed afterwards.
+
+`APP_ORIGIN` and a generated sensitive `AUTH_SECRET` are configured for production. Google web OAuth client credentials are **not configured**, so website Google login remains disabled. The hosted subscription inference restrictions below still apply. Deployment is not equivalent to completing those integrations.
+
+The Vercel project is linked to the GitHub repository for future deployments. No CLI credentials, local artifacts or SQLite database were uploaded. The deploy dry run verified those exclusions.
+
 This is a separate hosted workspace mode. The working local CLI edition is preserved. Vercel always activates cloud mode, even if someone sets OSKA_MODE=local. The hosted app rejects every legacy local-execution route before loading the local handler.
 
 ## What this version can and cannot do
