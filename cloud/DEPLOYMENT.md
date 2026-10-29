@@ -6,6 +6,10 @@ The cloud foundation is deployed at **https://oska-agent.vercel.app** in the own
 
 `APP_ORIGIN` and a generated sensitive `AUTH_SECRET` are configured for production. Google web OAuth client credentials are **not configured**, so website Google login remains disabled. The hosted subscription inference restrictions below still apply. Deployment is not equivalent to completing those integrations.
 
+An optional managed identity preview is implemented using the official `@neondatabase/auth/next` SDK. It is **not enabled** in production: Neon currently rejects the OSKA callback with `INVALID_CALLBACKURL`, and Neon account authorization is needed to add the trusted domain. After authorizing the correct existing Neon project, add `https://oska-agent.vercel.app` to its trusted domains, verify Google's redirect, then set `OSKA_AUTH_MODE=neon-preview` and redeploy. The integration already provides `NEON_AUTH_BASE_URL`; `AUTH_SECRET` signs SDK cookies. The SDK consumes its one-time verifier at `/auth/complete`. Shared Neon Google credentials are for development/testing and may show Neon branding; use your own OAuth client before a public production launch. Never enable this flag just because the code compiles.
+
+In preview mode, cloud APIs revalidate the managed session upstream, require verified email and derive workspace ownership from the managed subject (`neon:` prefix). Sign-out uses the SDK to revoke its session. Google client mode continues to use OSKA's encrypted, revocable database sessions. Both modes are identity only; neither enables model quota access.
+
 The Vercel project is linked to the GitHub repository for future deployments. No CLI credentials, local artifacts or SQLite database were uploaded. The deploy dry run verified those exclusions.
 
 This is a separate hosted workspace mode. The working local CLI edition is preserved. Vercel always activates cloud mode, even if someone sets OSKA_MODE=local. The hosted app rejects every legacy local-execution route before loading the local handler.

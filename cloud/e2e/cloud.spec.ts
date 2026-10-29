@@ -4,6 +4,19 @@ test('production cloud mode rejects all local execution and unsigned workspace r
   const teams=await request.get('/api/cloud/teams');expect(teams.status()).toBe(401);
   const cross=await request.post('/api/cloud/teams',{headers:{origin:'https://evil.example'},data:{}});expect(cross.status()).toBe(403);
   const forged=await request.get('/api/cloud/teams',{headers:{cookie:'oska_cloud_session=fake'}});expect(forged.status()).toBe(401);
+  const disabled=await request.get('/api/auth/get-session');expect(disabled.status()).toBe(503);
+});
+test('preview Google button uses the official identity SDK (UI fixture)',async({page})=>{
+  await page.route('**/api/cloud/auth/session',route=>route.fulfill({json:{profile:null,setup:{origin:true,identity:true,session:true,database:true},loginMode:'neon-preview',redirectUri:null}}));
+  let signIn:unknown;
+  await page.route('**/api/auth/sign-in/social',route=>{
+    signIn=route.request().postDataJSON();
+    return route.fulfill({status:403,json:{message:'Test fixture: domain authorization pending',code:'INVALID_CALLBACKURL'}});
+  });
+  await page.goto('/');await expect(page.getByText(/Preview login uses Neon/)).toBeVisible();
+  await page.getByRole('button',{name:'Sign in with Google',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('domain authorization pending');
+  expect(signIn).toMatchObject({provider:'google',callbackURL:new URL('/auth/complete',page.url()).href});
 });
 test('cloud landing honestly shows provider and deployment boundaries',async({page})=>{
   await page.goto('/');await expect(page.getByRole('heading',{name:/Your ideas/})).toBeVisible();await expect(page.getByRole('heading',{name:'Provider access is still pending'})).toBeVisible();await expect(page.getByRole('button',{name:'Sign in with Google',exact:true})).toBeDisabled();

@@ -5,6 +5,7 @@ import {NextResponse} from 'next/server';
 import {AppError} from '@/lib/contracts';
 import type {CloudProfile} from './contracts';
 import {cloudDatabaseUrl,cloudDb} from './db';
+import {managedAuth,managedAuthEnabled,managedAuthConfigured} from './managed-auth';
 const SESSION='oska_cloud_session',FLOW='oska_cloud_oauth';
 export function configuredOrigin(){
   const raw=process.env.APP_ORIGIN;
@@ -26,26 +27,40 @@ export function cookieValue(request:Request,name:string){return request.headers.
 export async function seal(payload:Record<string,unknown>,purpose:string,lifetime:string){return new EncryptJWT(payload).setProtectedHeader({alg:'dir',enc:'A256GCM'}).setIssuedAt().setIssuer('oska-cloud').setAudience(purpose).setExpirationTime(lifetime).encrypt(key());}
 export async function unseal(raw:string,purpose:string){try{const {payload}=await jwtDecrypt(raw,key(),{issuer:'oska-cloud',audience:purpose});return payload;}catch{throw new AppError('UNAUTHORIZED','Sign in to your OSKA account.',401);}}
 export async function cloudUser(request:Request):Promise<CloudProfile>{
+  if(managedAuthEnabled()){
+    const {data}=await (await managedAuth()).getSession({query:{disableCookieCache:'true'}});
+    const identity=data?.user;
+    if(!identity?.id||!identity.email||!identity.emailVerified)throw new AppError('UNAUTHORIZED','Sign in with a verified Google account.',401);
+    const user={sub:'neon:'+identity.id,email:identity.email,name:identity.name||identity.email.split('@')[0]};
+    const sql=cloudDb();await sql`INSERT INTO oska_cloud_users(id,email,name) VALUES(${user.sub},${user.email},${user.name}) ON CONFLICT(id) DO UPDATE SET email=excluded.email,name=excluded.name`;
+    return user;
+  }
   const payload=await unseal(cookieValue(request,SESSION),'session');
   if(typeof payload.sub!=='string'||typeof payload.email!=='string'||typeof payload.name!=='string'||typeof payload.sid!=='string')throw new AppError('UNAUTHORIZED','Invalid account session.',401);
   const sql=cloudDb();const active=await sql`SELECT id FROM oska_cloud_sessions WHERE id=${payload.sid}::uuid AND owner_id=${payload.sub} AND expires_at>CURRENT_TIMESTAMP`;
   if(!active.length)throw new AppError('UNAUTHORIZED','This account session was revoked or expired.',401);
   return {sub:payload.sub,email:payload.email,name:payload.name};
 }
-export function cloudSetup(){return {origin:!!process.env.APP_ORIGIN,identity:!!process.env.GOOGLE_CLIENT_ID&&!!process.env.GOOGLE_CLIENT_SECRET,session:!!process.env.AUTH_SECRET&&process.env.AUTH_SECRET.length>=32,database:!!cloudDatabaseUrl()};}
+export function cloudSetup(){return {origin:!!process.env.APP_ORIGIN,identity:managedAuthEnabled()?managedAuthConfigured():!!process.env.GOOGLE_CLIENT_ID&&!!process.env.GOOGLE_CLIENT_SECRET,session:!!process.env.AUTH_SECRET&&process.env.AUTH_SECRET.length>=32,database:!!cloudDatabaseUrl()};}
 const cookies={httpOnly:true,sameSite:'lax' as const,path:'/api/cloud',secure:true};
 export async function cloudAuth(request:Request,action:string){
   const origin=configuredOrigin();guardCloud(request,action==='callback');
   const options={...cookies,secure:origin.startsWith('https:')};
   if(action==='session'){
     let user:CloudProfile|null=null;try{user=await cloudUser(request);}catch{}
-    return NextResponse.json({profile:user,setup:cloudSetup(),redirectUri:origin+'/api/cloud/auth/callback'},{headers:{'Cache-Control':'no-store'}});
+    return NextResponse.json({profile:user,setup:cloudSetup(),loginMode:managedAuthEnabled()?'neon-preview':'google',redirectUri:managedAuthEnabled()?null:origin+'/api/cloud/auth/callback'},{headers:{'Cache-Control':'no-store'}});
   }
   if(action==='logout'&&request.method==='POST'){
+    if(managedAuthEnabled()){
+      const result=await (await managedAuth()).signOut();
+      if(result.error)throw new AppError('SIGN_OUT','Could not sign out. Try again.',503);
+      return NextResponse.json({signedOut:true});
+    }
     const payload=await unseal(cookieValue(request,SESSION),'session');
     if(typeof payload.sid==='string'&&typeof payload.sub==='string'){const sql=cloudDb();await sql`DELETE FROM oska_cloud_sessions WHERE id=${payload.sid}::uuid AND owner_id=${payload.sub}`;}
     const response=NextResponse.json({signedOut:true});response.cookies.set(SESSION,'',{...options,maxAge:0});return response;
   }
+  if(managedAuthEnabled())throw new AppError('NOT_FOUND','Use the managed identity client for preview sign-in.',404);
   const setup=cloudSetup();if(!setup.identity||!setup.session||!setup.database)throw new AppError('AUTH_SETUP_REQUIRED','Complete Google OAuth, AUTH_SECRET and Postgres setup for this deployment before enabling sign-in.',503);
   const callback=origin+'/api/cloud/auth/callback';
   if(action==='start'&&request.method==='GET'){

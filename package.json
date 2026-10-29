@@ -19,6 +19,7 @@
     "cloud:db": "node scripts/cloud-db.mjs"
   },
   "dependencies": {
+    "@neondatabase/auth": "0.7.0-beta",
     "@neondatabase/serverless": "^1.2.0",
     "@prisma/client": "6.19.0",
     "@radix-ui/react-slot": "^1.2.3",
