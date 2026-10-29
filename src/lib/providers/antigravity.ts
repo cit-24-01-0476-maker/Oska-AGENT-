@@ -41,7 +41,7 @@ export function environment(){
 }
 async function probe(args:string[]){
   const bin=await executable();return new Promise<string>((resolve,reject)=>{
-    const child=spawn(bin,args,{shell:false,windowsHide:true,env:environment(),stdio:['ignore','pipe','pipe']});let stdout='',stderr='';
+    const child=spawn(/*turbopackIgnore: true*/ bin,args,{shell:false,windowsHide:true,env:environment(),stdio:['ignore','pipe','pipe']});let stdout='',stderr='';
     const timer=setTimeout(()=>{child.kill();reject(new AppError('CLI_TIMEOUT','CLI did not respond in 20 seconds.',504));},20000);
     child.stdout.on('data',data=>{stdout+=data.toString();if(stdout.length>2_000_000){child.kill();reject(new AppError('CLI_OUTPUT','CLI output exceeds the limit.'));}});
     child.stderr.on('data',data=>{stderr=(stderr+data.toString()).slice(-8000);});
@@ -70,7 +70,7 @@ export class AntigravityProvider implements AIProvider {
     if(safety.useSession)args.push('--settings',JSON.stringify(sessionSafeguards));
     if(options.conversationId)args.push('--conversation',options.conversationId);
     return new Promise((resolve,reject)=>{
-      const child=spawn(bin,args,{cwd:options.cwd,shell:false,windowsHide:true,env:environment(),stdio:['ignore','pipe','pipe']});processes.set(options.taskId,child);
+      const child=spawn(/*turbopackIgnore: true*/ bin,args,{cwd:options.cwd,shell:false,windowsHide:true,env:environment(),stdio:['ignore','pipe','pipe']});processes.set(options.taskId,child);
       const parser=new NdjsonParser(),decoder=new StringDecoder('utf8');let stderr='',result:ProviderResult|undefined,chain=Promise.resolve();let failed=false;let bytes=0;
       const abort=()=>{child.kill();};options.signal.addEventListener('abort',abort,{once:true});
       const timer=setTimeout(()=>{failed=true;child.kill();reject(new AppError('CLI_TIMEOUT','Execution exceeded six minutes.',504));},360000);

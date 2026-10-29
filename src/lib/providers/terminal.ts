@@ -17,7 +17,7 @@ export async function openTerminal(command:string,cwd:string){
   await new Promise<void>((resolve,reject)=>{
     // Only the short launcher is hidden. The installer/login window is visible;
     // its output and any login material are never piped into OSKA.
-    const launcher=spawn(powershell,args,{cwd,env:environment(),shell:false,windowsHide:true,stdio:['ignore','ignore','ignore']});
+    const launcher=spawn(/*turbopackIgnore: true*/ powershell,args,{cwd,env:environment(),shell:false,windowsHide:true,stdio:['ignore','ignore','ignore']});
     const timeout=setTimeout(()=>{launcher.kill();reject(new AppError('TERMINAL_TIMEOUT','Windows did not confirm the terminal launch. Try again or use the manual command.',504));},15000);
     launcher.once('error',()=>{clearTimeout(timeout);reject(new AppError('TERMINAL','Windows could not open PowerShell. Use the manual command below.',503));});
     launcher.once('close',code=>{clearTimeout(timeout);if(code===0)resolve();else reject(new AppError('TERMINAL','Windows rejected the PowerShell window launch. Retry or use the manual command.',503));});

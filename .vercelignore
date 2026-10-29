@@ -1,0 +1,14 @@
+.git
+.env
+.env.*
+!.env.example
+data
+prisma/*.db
+prisma/*.db-*
+node_modules
+.next
+.next-cloud-check
+test-results
+playwright-report
+server.log
+server-error.log

@@ -1,5 +1,7 @@
 node_modules/
 .next/
+.next-cloud-check/
+.vercel/
 .env
 .env.local
 data/

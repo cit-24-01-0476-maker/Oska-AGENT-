@@ -4,6 +4,8 @@
 
 A working local-first MVP for Windows. Next.js / React / strict TypeScript, Tailwind, a shadcn-style Radix Button, Lucide and Framer Motion. Prisma 6 + SQLite persist tasks, plans, approvals, conversations, events, artifacts and usage. Real events stream over SSE. No paid API connector is enabled.
 
+**Vercel/browser-only mode:** deployment configuration, tenant-scoped Postgres storage and team drafts are now included. See [cloud/DEPLOYMENT.md](cloud/DEPLOYMENT.md). Cloud subscription inference is **not implemented**: Antigravity local account quota cannot be inferred from a website login, and remotely hosted ChatGPT/Codex plan usage needs its official supported eligibility path. The cloud UI shows those blockers honestly and never uses the owner's local model account for visitors.
+
 ## Install and start (PowerShell)
 
 Prerequisites: Windows 10/11, Node.js 22.12+ (tested on Node 24), and pnpm 10. Chromium is needed only for Browser/Research tasks. Antigravity CLI is needed only for model tasks.
