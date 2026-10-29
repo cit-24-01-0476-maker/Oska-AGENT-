@@ -15,7 +15,7 @@ test('preview Google button uses the official identity SDK (UI fixture)',async({
   });
   await page.goto('/');await expect(page.getByText(/Preview login uses Neon/)).toBeVisible();
   await page.getByRole('button',{name:'Sign in with Google',exact:true}).click();
-  await expect(page.getByRole('alert')).toContainText('domain authorization pending');
+  await expect(page.getByRole('alert').filter({hasText:'domain authorization pending'})).toBeVisible();
   expect(signIn).toMatchObject({provider:'google',callbackURL:new URL('/auth/complete',page.url()).href});
 });
 test('cloud landing honestly shows provider and deployment boundaries',async({page})=>{
